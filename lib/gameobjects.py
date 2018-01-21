@@ -14,9 +14,12 @@ class Background(pygame.sprite.Sprite):
 
 class GameAsset(pygame.sprite.Sprite):
 
+    acceleration = (0, 0)
+    angle = 0
+    damping = 0
+    thrust = 0
     velocity = (0, 0)
-    acceleration = (0.025, 0.025)
-    speed = 1
+    velocityMax = 8
 
     def __init__(self, image, scale, area):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -35,26 +38,83 @@ class GameAsset(pygame.sprite.Sprite):
         self.updatePhysics()
 
     def updatePhysics(self):
+        # Apply acceleration
+        self.applyAcceleration()
+
+        # Apply damping
+        self.applyDamping()
+
+        # Apply velocity cap (max velocity)
+        self.applyVelocityCap()
+
+        # Set player location
+        self.setAssetLocation()
+
+    def applyAcceleration(self):
         vx = self.velocity[0] + self.acceleration[0]
         vy = self.velocity[1] + self.acceleration[1]
         self.velocity = (vx, vy)
-        self.rect.x += self.velocity[0] * self.speed
-        self.rect.y += self.velocity[1] * self.speed
+
+    def applyDamping(self):
+        vx = self.velocity[0]
+        vy = self.velocity[1]
+
+        # Horizontal
+        if vx < self.damping * -1:
+            vx += self.damping
+        elif vx > self.damping:
+            vx -= self.damping
+        else:
+            vx = 0
+
+        # Vertical
+        if vy < self.damping * -1:
+            vy += self.damping
+        elif vy > self.damping:
+            vy -= self.damping
+        else:
+            vy = 0
+
+        self.velocity = (vx, vy)
+
+    def applyVelocityCap(self):
+        vx = self.velocity[0]
+        vy = self.velocity[1]
+
+        if vx > self.velocityMax:
+            vx = self.velocityMax
+
+        if vx < self.velocityMax * -1:
+            vx = self.velocityMax * -1
+
+        if vy > self.velocityMax:
+            vy = self.velocityMax
+
+        if vy < self.velocityMax * -1:
+            vy = self.velocityMax * -1
+
+        self.velocity = (vx, vy)
+
+    def setAssetLocation(self):
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
 
 
 class Player(GameAsset):
 
     def __init__(self, image, scale, area):
-        self.acceleration = (0, 0)
-        self.speed = 5
+        # Set defaults for Player
+        self.thrust = 0.5
+        self.damping = self.thrust * 0.6  # 60% of thurst
+
         super().__init__(image, scale, area)
 
     def update(self):
         # Process player Input
         controls = self.getPlayerInput()
-        angle = self.getShipMotion(controls)
-        if angle is not None:
-            self.rotate(angle)
+        self.setPlayerMotion(controls)
+        self.setPlayerAngle(controls)
+        self.rotate(self.angle)
 
         # Continue update
         super().update()
@@ -67,50 +127,43 @@ class Player(GameAsset):
 
         return (up, right, down, left)
 
-    def getShipMotion(self, controls):
+    def setPlayerMotion(self, controls):
+        accX = self.thrust * (controls[1] - controls[3])
+        accY = self.thrust * (controls[2] - controls[0])
+        self.acceleration = (accX, accY)
+
+    def setPlayerAngle(self, controls):
         # up
         if controls == (1, 0, 0, 0):
-            self.velocity = (0, -1)
-            return 0
+            self.angle = 0
 
         # right + up
         elif controls == (1, 1, 0, 0):
-            self.velocity = (1, -1)
-            return 315
+            self.angle = 315
 
         # right
         elif controls == (0, 1, 0, 0):
-            self.velocity = (1, 0)
-            return 270
+            self.angle = 270
 
         # right + down
         elif controls == (0, 1, 1, 0):
-            self.velocity = (1, 1)
-            return 225
+            self.angle = 225
 
         # down
         elif controls == (0, 0, 1, 0):
-            self.velocity = (0, 1)
-            return 180
+            self.angle = 180
 
         # left + down
         elif controls == (0, 0, 1, 1):
-            self.velocity = (-1, 1)
-            return 135
+            self.angle = 135
 
         # left
         elif controls == (0, 0, 0, 1):
-            self.velocity = (-1, 0)
-            return 90
+            self.angle = 90
 
         # left + up
         elif controls == (1, 0, 0, 1):
-            self.velocity = (-1, -1)
-            return 45
-
-        else:
-            self.velocity = (0, 0)
-            return None
+            self.angle = 45
 
 
 class Enemy(GameAsset):

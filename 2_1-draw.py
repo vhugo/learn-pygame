@@ -17,6 +17,7 @@ widthCenter = int(width / 2)
 heightCenter = int(height / 2)
 posCenter = (widthCenter, heightCenter)
 circleRadius = 100
+offset = (100, 100)
 
 polyPos = [(widthCenter, heightCenter - circleRadius),
            (widthCenter + circleRadius, heightCenter),
@@ -39,6 +40,17 @@ while running:
         if event.type == QUIT:
             sys.exit()
 
+    newWidthCenter = widthCenter + offset[0]
+    newHeightCenter = heightCenter + offset[1]
+    newPosCenter = (newWidthCenter, newHeightCenter)
+    newPolyPos = [(newWidthCenter, newHeightCenter - circleRadius),
+                  (newWidthCenter + circleRadius, newHeightCenter),
+                  (newWidthCenter, newHeightCenter + circleRadius),
+                  (newWidthCenter - circleRadius, newHeightCenter)]
+
     # Rendering
+    pygame.draw.circle(screen, blue, newPosCenter, circleRadius, 3)
+    pygame.draw.polygon(screen, red, newPolyPos, 3)
+
     pygame.display.flip()
     clock.tick(framerate)

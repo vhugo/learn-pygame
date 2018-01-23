@@ -19,21 +19,23 @@ clock = pygame.time.Clock()
 background = Background("images/nebula.bmp", w, h)
 
 # player
-player = Player("images/player.bmp", 2, (25, 1, 23, 23))
-player.position((int(w / 2), int(h / 2)))
+player = Player("images/player.bmp", 2, (25, 1, 23, 23), (w, h))
+player.spawning((int(w / 2), int(h / 2)))
 gameObjects.append(player)
 
 # enemies
 for i in range(3):
-    enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59))
-    setUniqueRandomPosition(enemy, w, h, gameObjects)
+    enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h))
+    enemy.velocity = (3, 3)
+    setUniqueRandomPosition(enemy, w, h, True, gameObjects)
     gameObjects.append(enemy)
     player.collisionGroup.append(enemy)
 
 # asteroids
-for i in range(3):
-    asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67))
-    setUniqueRandomPosition(asteroid, w, h, gameObjects)
+for i in range(5):
+    asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67), (w, h))
+    asteroid.velocity = (2, 2)
+    setUniqueRandomPosition(asteroid, w, h, True, gameObjects)
     gameObjects.append(asteroid)
     player.collisionGroup.append(asteroid)
 

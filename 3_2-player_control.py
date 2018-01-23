@@ -39,18 +39,31 @@ for i in range(5):
     player.collisionGroup.append(asteroid)
 
 
+delayEvents = 0
+delayEventsCaller = None
 running = True
 while running:
 
     # Rendering
     screen.blit(background.image, (background.rect.x, background.rect.y))
 
-    for gameObj in gameObjects:
-        gameObj.update()
+    # print(delayEvents)
+    for idx, gameObj in enumerate(gameObjects):
+        if delayEvents == 0:
+            gameObj.update()
 
-        if hasattr(gameObj, 'collision'):
-            if gameObj.collision:
-                screen.fill((255, 0, 0))
+            if gameObj.delayEvents != 0:
+                delayEventsCaller = idx
+                delayEvents = gameObj.delayEvents
+                break
+        else:
+            if idx == delayEventsCaller:
+                delayEvents -= 1
+                gameObj.delayEvents = delayEvents
+                # gameObjects[delayEventsCaller].delayEvents = delayEvents
+
+        if gameObj.collision:
+            screen.fill((255, 0, 0))
 
         screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))
 

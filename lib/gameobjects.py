@@ -43,8 +43,9 @@ class GameAsset(pygame.sprite.Sprite):
     thrust = 0
     velocity = (0, 0)
     velocityMax = 8
-    spawningPosition = None
-    spawningOutOfView = False
+    spawnPosition = None
+    spawnOutOfView = False
+    delayEvents = 0
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -63,13 +64,13 @@ class GameAsset(pygame.sprite.Sprite):
                 self,
                 self.bounds[0],
                 self.bounds[1],
-                self.spawningOutOfView)
+                self.spawnOutOfView)
         else:
-            self.spawningPosition = position
+            self.spawnPosition = position
             self.position(position)
 
     def respawning(self):
-        self.spawning(self.spawningPosition)
+        self.spawning(self.spawnPosition)
 
     def onSpawn(self):
         pass
@@ -228,6 +229,14 @@ class Player(GameAsset):
         elif controls == (1, 0, 0, 1):
             self.angle = 45
 
+    def onDeath(self):
+        self.angle = 0
+        self.rotate(0)
+        self.velocity = (0, 0)
+        self.delayEvents = 120  # delay event 120 cycles
+
+        super().onDeath()
+
 
 class Enemy(GameAsset):
     pass
@@ -237,6 +246,6 @@ class Asteroid(GameAsset):
 
     def __init__(self, image, scale, area, bounds):
         # Set defaults for Asteroid
-        self.spawningOutOfView = True
+        self.spawnOutOfView = True
 
         super().__init__(image, scale, area, bounds)

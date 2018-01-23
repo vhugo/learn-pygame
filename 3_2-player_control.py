@@ -26,18 +26,18 @@ gameObjects.append(player)
 # enemies
 for i in range(3):
     enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h))
-    enemy.velocity = (3, 3)
-    setUniqueRandomPosition(enemy, w, h, True, gameObjects)
+    setUniqueRandomPosition(enemy, w, h, False, gameObjects)
     gameObjects.append(enemy)
     player.collisionGroup.append(enemy)
 
 # asteroids
 for i in range(5):
     asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67), (w, h))
-    asteroid.velocity = (2, 2)
+    asteroid.velocity = (4, 4)
     setUniqueRandomPosition(asteroid, w, h, True, gameObjects)
     gameObjects.append(asteroid)
     player.collisionGroup.append(asteroid)
+
 
 running = True
 while running:

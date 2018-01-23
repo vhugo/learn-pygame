@@ -23,6 +23,8 @@ def setUniqueRandomPosition(gameAsset, w, h, out=False, gameAssetList=[]):
         if gameAsset.rect.colliderect(asset.rect):
             return setUniqueRandomPosition(gameAsset, w, h, gameAssetList)
 
+    return xy
+
 
 class Background(pygame.sprite.Sprite):
 
@@ -41,13 +43,14 @@ class GameAsset(pygame.sprite.Sprite):
     thrust = 0
     velocity = (0, 0)
     velocityMax = 8
+    spawningPosition = None
+    spawningOutOfView = False
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
         self.image.set_colorkey(self.image.get_at((0, 0)))
         self.rect = self.image.get_rect()
         self.bounds = bounds
-
         self.collision = False
         self.collisionGroup = []
 
@@ -60,9 +63,19 @@ class GameAsset(pygame.sprite.Sprite):
                 self,
                 self.bounds[0],
                 self.bounds[1],
-                True)
+                self.spawningOutOfView)
         else:
+            self.spawningPosition = position
             self.position(position)
+
+    def respawning(self):
+        self.spawning(self.spawningPosition)
+
+    def onSpawn(self):
+        pass
+
+    def onDeath(self):
+        self.respawning()
 
     def position(self, dest):
         self.rect.x = dest[0]
@@ -83,6 +96,8 @@ class GameAsset(pygame.sprite.Sprite):
         for asset in self.collisionGroup:
             self.collision = self.rect.colliderect(asset.rect)
             if self.collision:
+                self.onDeath()
+                asset.onDeath()
                 break
 
     def updatePhysics(self):
@@ -219,4 +234,9 @@ class Enemy(GameAsset):
 
 
 class Asteroid(GameAsset):
-    pass
+
+    def __init__(self, image, scale, area, bounds):
+        # Set defaults for Asteroid
+        self.spawningOutOfView = True
+
+        super().__init__(image, scale, area, bounds)

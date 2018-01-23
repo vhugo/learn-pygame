@@ -26,19 +26,27 @@ gameObjects.append(player)
 enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59))
 enemy.position((int(w / 2), int(h / 2)))
 gameObjects.append(enemy)
+player.collisionGroup.append(enemy)
 
 # asteroid
 asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67))
 asteroid.position((700, 150))
 gameObjects.append(asteroid)
+player.collisionGroup.append(asteroid)
 
 running = True
 while running:
 
     # Rendering
     for gameObj in gameObjects:
-        gameObj.update()
         screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))
+
+    for gameObj in gameObjects:
+        gameObj.update()
+
+        if hasattr(gameObj, 'collision'):
+            if gameObj.collision:
+                screen.fill((255, 0, 0))
 
     for event in pygame.event.get():
         if event.type == QUIT:

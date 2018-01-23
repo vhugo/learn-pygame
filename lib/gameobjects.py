@@ -26,6 +26,9 @@ class GameAsset(pygame.sprite.Sprite):
         self.image.set_colorkey(self.image.get_at((0, 0)))
         self.rect = self.image.get_rect()
 
+        self.collision = False
+        self.collisionGroup = []
+
     def rotate(self, angle):
         self.image = pygame.transform.rotate(self.asset, angle)
 
@@ -34,8 +37,30 @@ class GameAsset(pygame.sprite.Sprite):
         self.rect.y = dest[1]
 
     def update(self):
+        # Collision detection
+        self.checkForCollisions()
+
         # Update the physics
         self.updatePhysics()
+
+    def checkForCollisions(self):
+        collision = False
+        for asset in self.collisionGroup:
+            if self.rect.colliderect(asset.rect):
+                collision = True
+                break
+
+        if collision:
+            self.collision = True
+        else:
+            self.collision = False
+
+        # # Debug
+        # if self.collision:
+        #     print(
+        #         '%10s' % self.__class__.__name__,
+        #         '%10s' % asset.__class__.__name__,
+        #         '%5s' % self.rect.colliderect(asset.rect))
 
     def updatePhysics(self):
         # Apply acceleration

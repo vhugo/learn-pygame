@@ -25,6 +25,7 @@ gameObjects.append(player)
 # enemies
 for i in range(3):
     enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h))
+    enemy.setTarget(player)
     enemy.spawning()
     gameObjects.append(enemy)
     player.collisionGroup.append(enemy)
@@ -32,7 +33,7 @@ for i in range(3):
 # asteroids
 for i in range(5):
     asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67), (w, h))
-    asteroid.velocity = (4, 4)
+    asteroid.velocity = (1, 1)
     asteroid.spawning()
     gameObjects.append(asteroid)
     player.collisionGroup.append(asteroid)

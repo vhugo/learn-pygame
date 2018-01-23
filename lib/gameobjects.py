@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 from lib.imageloader import imageLoader
 
@@ -24,6 +25,7 @@ class GameAsset(pygame.sprite.Sprite):
     spawnPosition = None
     spawnOutOfView = False
     delayEvents = 0
+    speed = 2
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -32,6 +34,7 @@ class GameAsset(pygame.sprite.Sprite):
         self.bounds = bounds
         self.collision = False
         self.collisionGroup = []
+        self.target = None
 
     def rotate(self, angle):
         self.image = pygame.transform.rotate(self.asset, angle)
@@ -79,6 +82,9 @@ class GameAsset(pygame.sprite.Sprite):
         # Boundaries
         if self.rect.x > self.bounds[0] or self.rect.y > self.bounds[1]:
             self.spawning()
+
+        # Behavior based on target
+        self.followTarget()
 
         # Collision detection
         self.checkForCollisions()
@@ -154,6 +160,36 @@ class GameAsset(pygame.sprite.Sprite):
     def setAssetLocation(self):
         self.rect.x += self.velocity[0]
         self.rect.y += self.velocity[1]
+
+    def setTarget(self, target):
+        self.target = target
+
+    def followTarget(self):
+        if self.target is None:
+            return
+
+        targetDistance = (
+            self.target.rect.x - self.rect.x,
+            self.target.rect.y - self.rect.y
+        )
+
+        distance = math.sqrt(
+            (0 - targetDistance[0]) ** 2 +
+            (0 - targetDistance[1]) ** 2
+        )
+
+        trackingVelocity = (
+            (targetDistance[0] / distance) * self.speed,
+            (targetDistance[1] / distance) * self.speed
+        )
+
+        moveDistance = (
+            self.rect.x + trackingVelocity[0],
+            self.rect.y + trackingVelocity[1]
+        )
+
+        self.velocity = trackingVelocity
+        self.position(moveDistance)
 
 
 class Player(GameAsset):

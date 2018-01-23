@@ -44,16 +44,10 @@ class GameAsset(pygame.sprite.Sprite):
         self.updatePhysics()
 
     def checkForCollisions(self):
-        collision = False
         for asset in self.collisionGroup:
-            if self.rect.colliderect(asset.rect):
-                collision = True
+            self.collision = self.rect.colliderect(asset.rect)
+            if self.collision:
                 break
-
-        if collision:
-            self.collision = True
-        else:
-            self.collision = False
 
         # # Debug
         # if self.collision:

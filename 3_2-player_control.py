@@ -16,7 +16,6 @@ clock = pygame.time.Clock()
 
 # background
 background = Background("images/nebula.bmp", w, h)
-gameObjects.append(background)
 
 # player
 player = Player("images/player.bmp", 2, (25, 1, 23, 23))
@@ -38,8 +37,7 @@ running = True
 while running:
 
     # Rendering
-    for gameObj in gameObjects:
-        screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))
+    screen.blit(background.image, (background.rect.x, background.rect.y))
 
     for gameObj in gameObjects:
         gameObj.update()
@@ -47,6 +45,8 @@ while running:
         if hasattr(gameObj, 'collision'):
             if gameObj.collision:
                 screen.fill((255, 0, 0))
+
+        screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))
 
     for event in pygame.event.get():
         if event.type == QUIT:

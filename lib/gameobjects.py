@@ -4,28 +4,6 @@ import random
 from lib.imageloader import imageLoader
 
 
-def setUniqueRandomPosition(gameAsset, w, h, out=False, gameAssetList=[]):
-
-    if out:
-        xy = (
-            random.randrange((w - gameAsset.image.get_width()) * -1, 0),
-            random.randrange((h - gameAsset.image.get_height()) * -1, 0))
-
-    else:
-        xy = (
-            random.randrange(0, w - gameAsset.image.get_width()),
-            random.randrange(0, h - gameAsset.image.get_height()))
-
-    gameAsset.position(xy)
-
-    # Checking for overlayed objects, if empty will ignore check
-    for asset in gameAssetList:
-        if gameAsset.rect.colliderect(asset.rect):
-            return setUniqueRandomPosition(gameAsset, w, h, gameAssetList)
-
-    return xy
-
-
 class Background(pygame.sprite.Sprite):
 
     def __init__(self, image, width, height):
@@ -60,11 +38,7 @@ class GameAsset(pygame.sprite.Sprite):
 
     def spawning(self, position=None):
         if position is None:
-            setUniqueRandomPosition(
-                self,
-                self.bounds[0],
-                self.bounds[1],
-                self.spawnOutOfView)
+            self.randomPosition()
         else:
             self.spawnPosition = position
             self.position(position)
@@ -75,12 +49,31 @@ class GameAsset(pygame.sprite.Sprite):
     def onSpawn(self):
         pass
 
+    def onCollision(self):
+        pass
+
     def onDeath(self):
         self.respawning()
 
     def position(self, dest):
         self.rect.x = dest[0]
         self.rect.y = dest[1]
+
+    def randomPosition(self):
+        xy = (
+            random.randrange(0, self.bounds[0] - self.image.get_width()),
+            random.randrange(0, self.bounds[1] - self.image.get_height()))
+
+        if self.spawnOutOfView:
+            xy = (xy[0] * -1, xy[1] * -1, )
+
+        self.position(xy)
+
+        # Checking for overlaping objects that collides, if collision group is
+        # empty the following lines will be ignored
+        for asset in self.collisionGroup:
+            if self.rect.colliderect(asset.rect):
+                self.randomPosition()
 
     def update(self):
         # Boundaries
@@ -97,8 +90,7 @@ class GameAsset(pygame.sprite.Sprite):
         for asset in self.collisionGroup:
             self.collision = self.rect.colliderect(asset.rect)
             if self.collision:
-                self.onDeath()
-                asset.onDeath()
+                self.onCollision()
                 break
 
     def updatePhysics(self):
@@ -229,17 +221,25 @@ class Player(GameAsset):
         elif controls == (1, 0, 0, 1):
             self.angle = 45
 
+    def onCollision(self):
+        self.delayEvents = 120  # delay event 120 cycles
+        super().onCollision()
+
     def onDeath(self):
         self.angle = 0
         self.rotate(0)
         self.velocity = (0, 0)
-        self.delayEvents = 120  # delay event 120 cycles
 
         super().onDeath()
 
 
 class Enemy(GameAsset):
-    pass
+
+    def __init__(self, image, scale, area, bounds):
+        # Set defaults for Enemy
+        self.spawnOutOfView = True
+
+        super().__init__(image, scale, area, bounds)
 
 
 class Asteroid(GameAsset):

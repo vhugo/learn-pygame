@@ -2,7 +2,6 @@ import sys
 import pygame
 
 from lib.gameobjects import Background, Player, Enemy, Asteroid
-from lib.gameobjects import setUniqueRandomPosition
 from pygame import QUIT
 
 # Dimensions
@@ -26,7 +25,7 @@ gameObjects.append(player)
 # enemies
 for i in range(3):
     enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h))
-    setUniqueRandomPosition(enemy, w, h, False, gameObjects)
+    enemy.spawning()
     gameObjects.append(enemy)
     player.collisionGroup.append(enemy)
 
@@ -34,10 +33,9 @@ for i in range(3):
 for i in range(5):
     asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67), (w, h))
     asteroid.velocity = (4, 4)
-    setUniqueRandomPosition(asteroid, w, h, True, gameObjects)
+    asteroid.spawning()
     gameObjects.append(asteroid)
     player.collisionGroup.append(asteroid)
-
 
 delayEvents = 0
 delayEventsCaller = None
@@ -63,6 +61,10 @@ while running:
                 # gameObjects[delayEventsCaller].delayEvents = delayEvents
 
         if gameObj.collision:
+            if delayEvents == 0:
+                gameObj.onDeath()
+                for everybody in gameObj.collisionGroup:
+                    everybody.onDeath()
             screen.fill((255, 0, 0))
 
         screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))

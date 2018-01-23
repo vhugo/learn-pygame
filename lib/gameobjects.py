@@ -1,6 +1,18 @@
 import pygame
+import random
 
 from lib.imageloader import imageLoader
+
+
+def setUniqueRandomPosition(gameAsset, w, h, gameAssetList):
+    xy = (
+        random.randrange(0, w - gameAsset.image.get_width()),
+        random.randrange(0, h - gameAsset.image.get_height()))
+    gameAsset.position(xy)
+
+    for asset in gameAssetList:
+        if gameAsset.rect.colliderect(asset.rect):
+            return setUniqueRandomPosition(gameAsset, w, h, gameAssetList)
 
 
 class Background(pygame.sprite.Sprite):
@@ -48,13 +60,6 @@ class GameAsset(pygame.sprite.Sprite):
             self.collision = self.rect.colliderect(asset.rect)
             if self.collision:
                 break
-
-        # # Debug
-        # if self.collision:
-        #     print(
-        #         '%10s' % self.__class__.__name__,
-        #         '%10s' % asset.__class__.__name__,
-        #         '%5s' % self.rect.colliderect(asset.rect))
 
     def updatePhysics(self):
         # Apply acceleration

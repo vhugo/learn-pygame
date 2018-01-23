@@ -2,6 +2,7 @@ import sys
 import pygame
 
 from lib.gameobjects import Background, Player, Enemy, Asteroid
+from lib.gameobjects import setUniqueRandomPosition
 from pygame import QUIT
 
 # Dimensions
@@ -19,19 +20,22 @@ background = Background("images/nebula.bmp", w, h)
 
 # player
 player = Player("images/player.bmp", 2, (25, 1, 23, 23))
+player.position((int(w / 2), int(h / 2)))
 gameObjects.append(player)
 
-# enemy
-enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59))
-enemy.position((int(w / 2), int(h / 2)))
-gameObjects.append(enemy)
-player.collisionGroup.append(enemy)
+# enemies
+for i in range(3):
+    enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59))
+    setUniqueRandomPosition(enemy, w, h, gameObjects)
+    gameObjects.append(enemy)
+    player.collisionGroup.append(enemy)
 
-# asteroid
-asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67))
-asteroid.position((700, 150))
-gameObjects.append(asteroid)
-player.collisionGroup.append(asteroid)
+# asteroids
+for i in range(3):
+    asteroid = Asteroid("images/asteroid.bmp", 1, (6, 3, 80, 67))
+    setUniqueRandomPosition(asteroid, w, h, gameObjects)
+    gameObjects.append(asteroid)
+    player.collisionGroup.append(asteroid)
 
 running = True
 while running:

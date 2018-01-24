@@ -83,8 +83,7 @@ class GameAsset(pygame.sprite.Sprite):
 
     def update(self):
         # Boundaries
-        if self.rect.x > self.bounds[0] or self.rect.y > self.bounds[1]:
-            self.spawning()
+        self.checkBoundaries()
 
         # Behavior based on target
         self.followTarget()
@@ -94,6 +93,10 @@ class GameAsset(pygame.sprite.Sprite):
 
         # Update the physics
         self.updatePhysics()
+
+    def checkBoundaries(self):
+        if self.rect.x > self.bounds[0] or self.rect.y > self.bounds[1]:
+            self.spawning()
 
     def checkForCollisions(self):
         for asset in self.collisionGroup:
@@ -179,28 +182,28 @@ class GameAsset(pygame.sprite.Sprite):
         # Check if target is in range, engage pursuit
         if pursuitRange < self.targetRange:
 
-        targetDistance = (
-            self.target.rect.x - self.rect.x,
-            self.target.rect.y - self.rect.y
-        )
+            targetDistance = (
+                self.target.rect.x - self.rect.x,
+                self.target.rect.y - self.rect.y
+            )
 
-        distance = math.sqrt(
-            (0 - targetDistance[0]) ** 2 +
-            (0 - targetDistance[1]) ** 2
-        )
+            distance = math.sqrt(
+                (0 - targetDistance[0]) ** 2 +
+                (0 - targetDistance[1]) ** 2
+            )
 
-        trackingVelocity = (
+            trackingVelocity = (
                 ((targetDistance[0] / distance) * self.speed),
                 ((targetDistance[1] / distance) * self.speed)
-        )
+            )
 
-        moveDistance = (
-            self.rect.x + trackingVelocity[0],
-            self.rect.y + trackingVelocity[1]
-        )
+            moveDistance = (
+                self.rect.x + trackingVelocity[0],
+                self.rect.y + trackingVelocity[1]
+            )
 
-        self.velocity = trackingVelocity
-        self.position(moveDistance)
+            self.velocity = trackingVelocity
+            self.position(moveDistance)
 
 
 class Player(GameAsset):
@@ -224,6 +227,22 @@ class Player(GameAsset):
 
         # Continue update
         super().update()
+
+    def checkBoundaries(self):
+        boundx = self.bounds[0] - self.image.get_width()
+        boundy = self.bounds[1] - self.image.get_height()
+
+        if self.rect.x >= boundx:
+            self.rect.x = boundx
+
+        if self.rect.x <= 0:
+            self.rect.x = 0
+
+        if self.rect.y >= boundy:
+            self.rect.y = boundy
+
+        if self.rect.y <= 0:
+            self.rect.y = 0
 
     def getPlayerInput(self):
         up = pygame.key.get_pressed()[pygame.K_UP]

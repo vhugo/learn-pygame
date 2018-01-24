@@ -28,6 +28,7 @@ class GameAsset(pygame.sprite.Sprite):
     speed = 2
     target = None
     targetRange = 300
+    targetState = 1
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -50,6 +51,7 @@ class GameAsset(pygame.sprite.Sprite):
             self.position(position)
 
     def respawning(self):
+        self.targetState = 1
         self.spawning(self.spawnPosition)
 
     def onSpawn(self):
@@ -96,7 +98,7 @@ class GameAsset(pygame.sprite.Sprite):
 
     def checkBoundaries(self):
         if self.rect.x > self.bounds[0] or self.rect.y > self.bounds[1]:
-            self.spawning()
+            self.respawning()
 
     def checkForCollisions(self):
         for asset in self.collisionGroup:
@@ -179,31 +181,50 @@ class GameAsset(pygame.sprite.Sprite):
             (self.rect.y - self.target.rect.y) ** 2
         )
 
-        # Check if target is in range, engage pursuit
-        if pursuitRange < self.targetRange:
+        # State 1 - Search
+        if self.targetState == 1:
+            if pursuitRange < self.targetRange:
+                self.targetState = 2
+            else:
+                self.velocity = (
+                    self.velocity[0] + self.thrust,
+                    self.velocity[1] + self.thrust
+                )
 
-            targetDistance = (
-                self.target.rect.x - self.rect.x,
-                self.target.rect.y - self.rect.y
+        # State 2 - Pursuit target
+        elif self.targetState == 2:
+            if pursuitRange >= self.targetRange:
+                self.targetState = 3
+            else:
+                targetDistance = (
+                    self.target.rect.x - self.rect.x,
+                    self.target.rect.y - self.rect.y
+                )
+
+                distance = math.sqrt(
+                    (0 - targetDistance[0]) ** 2 +
+                    (0 - targetDistance[1]) ** 2
+                )
+
+                trackingVelocity = (
+                    ((targetDistance[0] / distance) * self.speed),
+                    ((targetDistance[1] / distance) * self.speed)
+                )
+
+                moveDistance = (
+                    self.rect.x + trackingVelocity[0],
+                    self.rect.y + trackingVelocity[1]
+                )
+
+                self.velocity = trackingVelocity
+                self.position(moveDistance)
+
+        # State 3 - Disengage pursuit
+        elif self.targetState == 3:
+            self.velocity = (
+                self.velocity[0] + self.thrust,
+                self.velocity[1] + self.thrust
             )
-
-            distance = math.sqrt(
-                (0 - targetDistance[0]) ** 2 +
-                (0 - targetDistance[1]) ** 2
-            )
-
-            trackingVelocity = (
-                ((targetDistance[0] / distance) * self.speed),
-                ((targetDistance[1] / distance) * self.speed)
-            )
-
-            moveDistance = (
-                self.rect.x + trackingVelocity[0],
-                self.rect.y + trackingVelocity[1]
-            )
-
-            self.velocity = trackingVelocity
-            self.position(moveDistance)
 
 
 class Player(GameAsset):

@@ -26,6 +26,8 @@ class GameAsset(pygame.sprite.Sprite):
     spawnOutOfView = False
     delayEvents = 0
     speed = 2
+    target = None
+    targetRange = 300
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -34,7 +36,8 @@ class GameAsset(pygame.sprite.Sprite):
         self.bounds = bounds
         self.collision = False
         self.collisionGroup = []
-        self.target = None
+
+        self.onSpawn()
 
     def rotate(self, angle):
         self.image = pygame.transform.rotate(self.asset, angle)
@@ -50,7 +53,7 @@ class GameAsset(pygame.sprite.Sprite):
         self.spawning(self.spawnPosition)
 
     def onSpawn(self):
-        pass
+        self.spawning()
 
     def onCollision(self):
         pass
@@ -168,6 +171,14 @@ class GameAsset(pygame.sprite.Sprite):
         if self.target is None:
             return
 
+        pursuitRange = math.sqrt(
+            (self.rect.x - self.target.rect.x) ** 2 +
+            (self.rect.y - self.target.rect.y) ** 2
+        )
+
+        # Check if target is in range, engage pursuit
+        if pursuitRange < self.targetRange:
+
         targetDistance = (
             self.target.rect.x - self.rect.x,
             self.target.rect.y - self.rect.y
@@ -179,8 +190,8 @@ class GameAsset(pygame.sprite.Sprite):
         )
 
         trackingVelocity = (
-            (targetDistance[0] / distance) * self.speed,
-            (targetDistance[1] / distance) * self.speed
+                ((targetDistance[0] / distance) * self.speed),
+                ((targetDistance[1] / distance) * self.speed)
         )
 
         moveDistance = (
@@ -200,6 +211,9 @@ class Player(GameAsset):
         self.damping = self.thrust * 0.6  # 60% of thurst
 
         super().__init__(image, scale, area, bounds)
+
+    def onSpawn(self):
+        self.spawning((int(self.bounds[0] / 2), int(self.bounds[1] / 2)))
 
     def update(self):
         # Process player Input
@@ -274,8 +288,18 @@ class Enemy(GameAsset):
     def __init__(self, image, scale, area, bounds):
         # Set defaults for Enemy
         self.spawnOutOfView = True
+        self.thrust = 0.25
+        self.damping = self.thrust * 0.6  # 60% of thurst
+        self.velocityMax = 4
 
         super().__init__(image, scale, area, bounds)
+
+    def update(self):
+        self.setEnemyMotion()
+        super().update()
+
+    def setEnemyMotion(self):
+        self.acceleration = (self.thrust, self.thrust)
 
 
 class Asteroid(GameAsset):
@@ -283,5 +307,6 @@ class Asteroid(GameAsset):
     def __init__(self, image, scale, area, bounds):
         # Set defaults for Asteroid
         self.spawnOutOfView = True
+        self.velocity = (1, 1)
 
         super().__init__(image, scale, area, bounds)

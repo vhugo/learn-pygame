@@ -5,8 +5,7 @@ used to learn about game development basics.
 ## Set up dev environment
 
 After you ensure [python3](https://docs.python.org/3/using/index.html),
-[pip](https://packaging.python.org/guides/installing-using-linux-tools/) and
-[virtualenv](https://packaging.python.org/guides/installing-using-pip-and-virtualenv/#installing-virtualenv)
+[pip](https://packaging.python.org/guides/installing-using-linux-tools/)
 are installed and set. Run the following command to install dependencies
 required to execute the programs in this project.
 
@@ -14,7 +13,8 @@ required to execute the programs in this project.
 pip install -r requirements.txt
 ```
 
-Once it's all done. Just call the scripts using python interpreter. Ex.:
+Once it's all done. Just call the scripts using python interpreter.
+Ex.:
 
 ```bash
 python script_name.py

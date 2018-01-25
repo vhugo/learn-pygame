@@ -29,6 +29,7 @@ class GameAsset(pygame.sprite.Sprite):
     target = None
     targetRange = 300
     targetState = 1
+    collisionCause = None
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -38,7 +39,7 @@ class GameAsset(pygame.sprite.Sprite):
         self.collision = False
         self.collisionGroup = []
 
-        self.onSpawn()
+        self.spawning()
 
     def rotate(self, angle):
         self.image = pygame.transform.rotate(self.asset, angle)
@@ -50,18 +51,31 @@ class GameAsset(pygame.sprite.Sprite):
             self.spawnPosition = position
             self.position(position)
 
+        self.onSpawn()
+
     def respawning(self):
-        self.targetState = 1
         self.spawning(self.spawnPosition)
 
+    def reset(self):
+        self.collisionCause = None
+        self.targetState = 1
+
+        if self.spawnPosition is None:
+            self.randomPosition()
+        else:
+            self.position(self.spawnPosition)
+
     def onSpawn(self):
-        self.spawning()
+        pass
 
     def onCollision(self):
         pass
 
     def onDeath(self):
-        self.respawning()
+        if self.collisionCause is not None:
+            self.collisionCause.onDeath()
+
+        self.reset()
 
     def position(self, dest):
         self.rect.x = dest[0]
@@ -87,9 +101,6 @@ class GameAsset(pygame.sprite.Sprite):
         # Boundaries
         self.checkBoundaries()
 
-        # Behavior based on target
-        self.followTarget()
-
         # Collision detection
         self.checkForCollisions()
 
@@ -98,12 +109,14 @@ class GameAsset(pygame.sprite.Sprite):
 
     def checkBoundaries(self):
         if self.rect.x > self.bounds[0] or self.rect.y > self.bounds[1]:
-            self.respawning()
+            self.reset()
 
     def checkForCollisions(self):
         for asset in self.collisionGroup:
             self.collision = self.rect.colliderect(asset.rect)
             if self.collision:
+                self.collisionCause = asset
+                print("COLLISION", self.collisionCause.__class__.__name__)
                 self.onCollision()
                 break
 
@@ -169,63 +182,6 @@ class GameAsset(pygame.sprite.Sprite):
         self.rect.x += self.velocity[0]
         self.rect.y += self.velocity[1]
 
-    def setTarget(self, target):
-        self.target = target
-
-    def followTarget(self):
-        if self.target is None:
-            return
-
-        pursuitRange = math.sqrt(
-            (self.rect.x - self.target.rect.x) ** 2 +
-            (self.rect.y - self.target.rect.y) ** 2
-        )
-
-        # State 1 - Search
-        if self.targetState == 1:
-            if pursuitRange < self.targetRange:
-                self.targetState = 2
-            else:
-                self.velocity = (
-                    self.velocity[0] + self.thrust,
-                    self.velocity[1] + self.thrust
-                )
-
-        # State 2 - Pursuit target
-        elif self.targetState == 2:
-            if pursuitRange >= self.targetRange:
-                self.targetState = 3
-            else:
-                targetDistance = (
-                    self.target.rect.x - self.rect.x,
-                    self.target.rect.y - self.rect.y
-                )
-
-                distance = math.sqrt(
-                    (0 - targetDistance[0]) ** 2 +
-                    (0 - targetDistance[1]) ** 2
-                )
-
-                trackingVelocity = (
-                    ((targetDistance[0] / distance) * self.speed),
-                    ((targetDistance[1] / distance) * self.speed)
-                )
-
-                moveDistance = (
-                    self.rect.x + trackingVelocity[0],
-                    self.rect.y + trackingVelocity[1]
-                )
-
-                self.velocity = trackingVelocity
-                self.position(moveDistance)
-
-        # State 3 - Disengage pursuit
-        elif self.targetState == 3:
-            self.velocity = (
-                self.velocity[0] + self.thrust,
-                self.velocity[1] + self.thrust
-            )
-
 
 class Player(GameAsset):
 
@@ -236,8 +192,9 @@ class Player(GameAsset):
 
         super().__init__(image, scale, area, bounds)
 
-    def onSpawn(self):
-        self.spawning((int(self.bounds[0] / 2), int(self.bounds[1] / 2)))
+    def spawning(self, position=None):
+        position = (int(self.bounds[0] / 2), int(self.bounds[1] / 2))
+        super().spawning(position)
 
     def update(self):
         # Process player Input
@@ -320,19 +277,105 @@ class Player(GameAsset):
         self.rotate(0)
         self.velocity = (0, 0)
 
+        self.respawning()
         super().onDeath()
 
 
-class Enemy(GameAsset):
+class GameHazard(GameAsset):
 
-    def __init__(self, image, scale, area, bounds):
+    def __init__(self, image, scale, area, bounds, waveManager):
+        self.waveManager = waveManager
+
+        super().__init__(image, scale, area, bounds)
+
+    def spawning(self, position=None):
+        if self.waveManager.allowSpawn():
+            super().spawning(position)
+
+    def onSpawn(self):
+        self.waveManager.hazardSpawned()
+        super().onSpawn()
+
+    def onDeath(self):
+        self.waveManager.hazardDied()
+        super().onDeath()
+
+    def update(self):
+        # wave progression
+        self.waveManager.update()
+
+        # Behavior based on target
+        self.followTarget()
+        super().update()
+
+    def setTarget(self, target):
+        self.target = target
+
+    def followTarget(self):
+        if self.target is None:
+            return
+
+        pursuitRange = math.sqrt(
+            (self.rect.x - self.target.rect.x) ** 2 +
+            (self.rect.y - self.target.rect.y) ** 2
+        )
+
+        # State 1 - Search
+        if self.targetState == 1:
+            if pursuitRange < self.targetRange:
+                self.targetState = 2
+            else:
+                self.velocity = (
+                    self.velocity[0] + self.thrust,
+                    self.velocity[1] + self.thrust
+                )
+
+        # State 2 - Pursuit target
+        elif self.targetState == 2:
+            if pursuitRange >= self.targetRange:
+                self.targetState = 3
+            else:
+                targetDistance = (
+                    self.target.rect.x - self.rect.x,
+                    self.target.rect.y - self.rect.y
+                )
+
+                distance = math.sqrt(
+                    (0 - targetDistance[0]) ** 2 +
+                    (0 - targetDistance[1]) ** 2
+                )
+
+                trackingVelocity = (
+                    ((targetDistance[0] / distance) * self.speed),
+                    ((targetDistance[1] / distance) * self.speed)
+                )
+
+                moveDistance = (
+                    self.rect.x + trackingVelocity[0],
+                    self.rect.y + trackingVelocity[1]
+                )
+
+                self.velocity = trackingVelocity
+                self.position(moveDistance)
+
+        # State 3 - Disengage pursuit
+        elif self.targetState == 3:
+            self.velocity = (
+                self.velocity[0] + self.thrust,
+                self.velocity[1] + self.thrust
+            )
+
+
+class Enemy(GameHazard):
+
+    def __init__(self, image, scale, area, bounds, waveManager):
         # Set defaults for Enemy
         self.spawnOutOfView = True
         self.thrust = 0.25
         self.damping = self.thrust * 0.6  # 60% of thurst
         self.velocityMax = 4
 
-        super().__init__(image, scale, area, bounds)
+        super().__init__(image, scale, area, bounds, waveManager)
 
     def update(self):
         self.setEnemyMotion()
@@ -350,3 +393,40 @@ class Asteroid(GameAsset):
         self.velocity = (1, 1)
 
         super().__init__(image, scale, area, bounds)
+
+
+class WaveManager():
+
+    def __init__(self, hazardsPerWave):
+        self.currentWave = 1
+        self.hazardSpawnedCount = 0
+        self.hazardDeathCount = 0
+        self.hazardsPerWave = hazardsPerWave
+        self.delayEvents = 0
+
+    def allowSpawn(self):
+        return self.hazardSpawnedCount <= self.hazardsPerWave
+
+    def hazardSpawned(self):
+        self.hazardSpawnedCount += 1
+
+    def hazardDied(self):
+        self.hazardDeathCount += 1
+
+        if self.hazardDeathCount == self.hazardsPerWave:
+            self.nextWave()
+
+    def nextWave(self):
+        self.hazardSpawnedCount = 0
+        self.hazardDeathCount = 0
+        self.hazardsPerWave += 3
+        self.currentWave += 1
+        self.delayEvents = 120
+
+    def update(self):
+        pass
+        # print(
+        #     "Wave: %3d " % self.currentWave,
+        #     "PerWave: %3d " % self.hazardsPerWave,
+        #     "Spawed: %3d " % self.hazardSpawnedCount,
+        #     "Died: %3d " % self.hazardDeathCount)

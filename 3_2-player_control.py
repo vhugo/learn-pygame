@@ -1,7 +1,7 @@
 import sys
 import pygame
 
-from lib.gameobjects import Background, Player, Enemy, Asteroid
+from lib.gameobjects import Background, Player, Enemy, Asteroid, WaveManager
 from pygame import QUIT
 
 # Dimensions
@@ -22,8 +22,9 @@ player = Player("images/player.bmp", 2, (25, 1, 23, 23), (w, h))
 gameObjects.append(player)
 
 # enemies
+enemyWave = WaveManager(3)
 for i in range(3):
-    enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h))
+    enemy = Enemy("images/enemy.bmp", 1, (101, 13, 91, 59), (w, h), enemyWave)
     enemy.setTarget(player)
     gameObjects.append(enemy)
     player.collisionGroup.append(enemy)
@@ -44,6 +45,12 @@ while running:
 
     # print(delayEvents)
     for idx, gameObj in enumerate(gameObjects):
+
+        if enemyWave.delayEvents > 0:
+            enemyWave.delayEvents -= 1
+            screen.fill((0, 255, 0))
+            break
+
         if delayEvents == 0:
             gameObj.update()
 
@@ -55,13 +62,12 @@ while running:
             if idx == delayEventsCaller:
                 delayEvents -= 1
                 gameObj.delayEvents = delayEvents
-                # gameObjects[delayEventsCaller].delayEvents = delayEvents
 
         if gameObj.collision:
             if delayEvents == 0:
                 gameObj.onDeath()
                 for everybody in gameObj.collisionGroup:
-                    everybody.onDeath()
+                    everybody.reset()
             screen.fill((255, 0, 0))
 
         screen.blit(gameObj.image, (gameObj.rect.x, gameObj.rect.y))

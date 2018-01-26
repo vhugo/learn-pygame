@@ -60,6 +60,7 @@ while running:
                 break
         else:
             if idx == delayEventsCaller:
+                gameObj.image = gameObj.collisionAnimation.getFrame()
                 delayEvents -= 1
                 gameObj.delayEvents = delayEvents
 

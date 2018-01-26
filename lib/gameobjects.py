@@ -4,6 +4,8 @@ import math
 
 from lib.imageloader import imageLoader
 
+DELAYTIME = 120
+
 
 class Background(pygame.sprite.Sprite):
 
@@ -12,6 +14,64 @@ class Background(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(
             self.OriginalAssetImage, (width, height))
         self.rect = self.image.get_rect()
+
+
+class Animation():
+
+    currentFrame = 0
+    currentLoop = 0
+    loop = 0
+
+    def __init__(self, image, frames, framesPerImage, frameSize):
+        self.frames = []
+        self.framesPerImage = framesPerImage
+        self.totalFrames = frames
+        self.frameSize = frameSize
+        self.image = image
+
+        self.loadFrames()
+
+    def loadFrames(self):
+        pass
+
+    def getFrame(self):
+        frame = self.frames[self.currentFrame]
+
+        self.currentLoop += 1
+        if self.currentLoop % self.framesPerImage == 0:
+            self.currentFrame += 1
+
+        if self.currentFrame >= self.totalFrames:
+            self.currentFrame = 0
+            self.loop += 1
+
+        if self.loop > 0:
+            frame = pygame.Surface((0, 0))
+
+        return frame
+
+    def reset(self):
+        self.currentFrame = 0
+        self.currentLoop = 0
+        self.loop = 0
+
+
+class Explosion(Animation):
+
+    def __init__(self):
+        super().__init__("images/explode.bmp", 6, 15, (24, 25))
+
+    def loadFrames(self):
+        startX = 0
+        for i in range(self.totalFrames):
+            image = imageLoader(
+                self.image,
+                1,
+                (startX, 0, self.frameSize[0], self.frameSize[1])
+            )
+            image.set_colorkey(image.get_at((0, 0)))
+            self.frames.append(image)
+            startX += self.frameSize[0]
 
 
 class GameAsset(pygame.sprite.Sprite):
@@ -30,6 +90,7 @@ class GameAsset(pygame.sprite.Sprite):
     targetRange = 300
     targetState = 1
     collisionCause = None
+    collisionAnimation = None
 
     def __init__(self, image, scale, area, bounds):
         self.image = self.asset = imageLoader(image, scale, area)
@@ -38,8 +99,13 @@ class GameAsset(pygame.sprite.Sprite):
         self.bounds = bounds
         self.collision = False
         self.collisionGroup = []
+        self.animation = []
 
+        self.loadAnimations()
         self.spawning()
+
+    def loadAnimations(self):
+        self.collisionAnimation = Explosion()
 
     def rotate(self, angle):
         self.image = pygame.transform.rotate(self.asset, angle)
@@ -69,9 +135,11 @@ class GameAsset(pygame.sprite.Sprite):
         pass
 
     def onCollision(self):
+        self.image = self.collisionAnimation.getFrame()
         pass
 
     def onDeath(self):
+        self.collisionAnimation.reset()
         if self.collisionCause is not None:
             self.collisionCause.onDeath()
 
@@ -269,7 +337,7 @@ class Player(GameAsset):
             self.angle = 45
 
     def onCollision(self):
-        self.delayEvents = 120  # delay event 120 cycles
+        self.delayEvents = DELAYTIME  # delay event 120 cycles
         super().onCollision()
 
     def onDeath(self):
@@ -421,7 +489,7 @@ class WaveManager():
         self.hazardDeathCount = 0
         self.hazardsPerWave += 3
         self.currentWave += 1
-        self.delayEvents = 120
+        self.delayEvents = DELAYTIME
 
     def update(self):
         pass

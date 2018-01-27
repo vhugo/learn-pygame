@@ -465,12 +465,13 @@ class Asteroid(GameAsset):
 
 class WaveManager():
 
-    def __init__(self, hazardsPerWave):
+    def __init__(self, hazardsPerWave, scoreBoard):
         self.currentWave = 1
         self.hazardSpawnedCount = 0
         self.hazardDeathCount = 0
         self.hazardsPerWave = hazardsPerWave
         self.delayEvents = 0
+        self.scoreBoard = scoreBoard
 
     def allowSpawn(self):
         return self.hazardSpawnedCount <= self.hazardsPerWave
@@ -480,6 +481,7 @@ class WaveManager():
 
     def hazardDied(self):
         self.hazardDeathCount += 1
+        self.scoreBoard.points += 1
 
         if self.hazardDeathCount == self.hazardsPerWave:
             self.nextWave()
@@ -490,6 +492,7 @@ class WaveManager():
         self.hazardsPerWave += 3
         self.currentWave += 1
         self.delayEvents = DELAYTIME
+        self.scoreBoard.waves = self.currentWave
 
     def update(self):
         pass
@@ -498,3 +501,50 @@ class WaveManager():
         #     "PerWave: %3d " % self.hazardsPerWave,
         #     "Spawed: %3d " % self.hazardSpawnedCount,
         #     "Died: %3d " % self.hazardDeathCount)
+
+
+class Sprite():
+
+    def __init__(self, image):
+        self.sprite = []
+        self.image = image
+        self.loadSprite()
+
+    def loadSprite(self):
+        pass
+
+
+class ScoreBoard(Sprite):
+
+    def __init__(self):
+        self.points = 0
+        self.waves = 0
+        super().__init__("images/numbers.bmp")
+
+    def loadSprite(self):
+        for i in range(0, 10):
+            image = imageLoader(
+                self.image,
+                1,
+                ((30 * i), 0, 30, 49)
+            )
+            image.set_colorkey(image.get_at((0, 0)))
+            self.sprite.append(image)
+
+    def getNumber(self, number):
+        numbers = [int(n) for n in str(number)]
+        total = len(numbers)
+        nSurface = pygame.Surface(((30 * total), 49))
+        nSurface.set_colorkey((0, 0, 0))
+
+        for idx, n in enumerate(numbers):
+            xy = (30 * idx, 0)
+            nSurface.blit(self.sprite[n], xy)
+
+        return nSurface
+
+    def getScore(self):
+        return self.getNumber(self.points)
+
+    def getWave(self):
+        return self.getNumber(self.waves)

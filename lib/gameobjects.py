@@ -15,6 +15,9 @@ class Background(pygame.sprite.Sprite):
             self.OriginalAssetImage, (width, height))
         self.rect = self.image.get_rect()
 
+        pygame.init()
+        pygame.mixer.Sound("audio/music.wav").play(-1)
+
 
 class Animation():
 
@@ -59,7 +62,7 @@ class Animation():
 class Explosion(Animation):
 
     def __init__(self):
-        super().__init__("images/explode.bmp", 6, 15, (24, 25))
+        super().__init__("images/explode.bmp", 6, 4, (24, 25))
 
     def loadFrames(self):
         startX = 0
@@ -136,7 +139,9 @@ class GameAsset(pygame.sprite.Sprite):
 
     def onCollision(self):
         self.image = self.collisionAnimation.getFrame()
-        pass
+
+        pygame.init()
+        pygame.mixer.Sound("audio/explosion.wav").play()
 
     def onDeath(self):
         self.collisionAnimation.reset()
@@ -493,6 +498,9 @@ class WaveManager():
         self.currentWave += 1
         self.delayEvents = DELAYTIME
         self.scoreBoard.waves = self.currentWave
+
+        pygame.init()
+        pygame.mixer.Sound("audio/next-wave.wav").play()
 
     def update(self):
         pass
